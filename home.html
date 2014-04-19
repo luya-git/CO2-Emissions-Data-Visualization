@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title></title>
+
+	<!-- grab d3 via cdn -->
+	<script src="http://d3js.org/d3.v3.min.js"></script>
+	
+	<!-- custom css for project -->
+	<link href="project.css" rel="stylesheet">
+	
+    <!-- Bootstrap core CSS -->
+    <link href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Just for debugging purposes. Don't actually copy this line! -->
+    <!--[if lt IE 9]><script src="../../assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
+
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+      <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+
+  <body>
+
+    <!-- Static navbar -->
+    <div class="navbar navbar-default navbar-static-top" role="navigation">
+      <div class="container">
+        <div class="navbar-header">
+          <a class="navbar-brand" href="#">CO2 World Emissions Data Visualization</a>
+        </div>
+        <div class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+            <li class="active"><a href="#">Visualization</a></li>
+            <li><a href="#about">About</a></li>
+          </ul>
+        </div><!--/.nav-collapse -->
+      </div>
+    </div>
+
+	<!-- Bootstrap content container -->
+    <div class="container">
+		<div class="row">
+			<div class="col-md-9">
+				<!-- DataMaps Container -->
+				<div id="mapContainer" style="position: relative; width: 800px; height: 400px;"></div>
+				<div class="well">
+					<h3>CO2 World Emissions Data Visualization: Project Description</h3>
+					<hr>
+					<h4>Data</h4>
+					<hr>
+					Our dataset comes from the World Bank. 
+					<br />URL: <a href="http://data.worldbank.org/indicator/EN.ATM.CO2E.PC">http://data.worldbank.org/indicator/EN.ATM.CO2E.PCmetric</a> 
+					<br />Units: METRIC TONS PER CAPITA 
+				</div>
+			</div>
+			<div class="col-md-3">
+				<div class="well">
+					<h3>Map Key & Control</h3>
+					<hr>
+					<div class="btn-group">
+					  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+						Select Year <span class="caret"></span>
+					  </button>
+					  <ul id="YearDropDown" class="dropdown-menu scrollable-menu" role="menu">
+					  </ul>
+					</div>
+					<br /><br />
+					<button type="button" class="btn btn-default">Animate (1960-2010)</button>
+				</div>
+			</div>
+		</div>
+    </div> <!-- /container -->
+
+
+    <!-- Core javascript libraries (delivered via CDN)
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+    <script src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+	<script src="http://d3js.org/topojson.v1.min.js"></script>
+	<script src="datamaps.world.min.js"></script>
+	
+	<script type="text/javascript">
+	
+    var map = new Datamap({element: document.getElementById('mapContainer')});
+	
+	// Load data from CSV and convert to JSON
+	var dataset;
+	
+	d3.csv("http://localhost/en.atm.co2e.pc_Indicator_en_csv_v2.csv", function(data) {
+	   dataset = data;
+	   console.log(dataset)
+	}, callbackFunc);
+	
+	// After CSV is loaded into the dataset object, this callback function is called
+	function callbackFunc()
+	{
+		// Set the year dropdown list
+		for(var propertyName in dataset) {
+		
+			// Only add years to the list (use regex to detect alpha chars)
+			if(propertyName.substring(0,1).match(/^[A-z]+$/))
+			{
+				continue;
+			}	
+			
+			// Add the year to the dropdown list
+			d3.select("#YearDropDown").append("li").html("<a href='#'>" + propertyName + "</a>");
+		}
+	}
+	</script>
+  </body>
+</html>
