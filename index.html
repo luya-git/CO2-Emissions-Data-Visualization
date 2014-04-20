@@ -50,7 +50,7 @@
 		<div class="row">
 			<div class="col-md-9">
 				<!-- DataMaps Container -->
-				<div id="mapContainer" style="position: relative; width: 800px; height: 400px;"></div>
+				<div id="mapContainer" style="position: relative; width: 1100px; height: 750px;"></div>
 				<div class="well">
 					<h3>CO2 World Emissions Data Visualization: Project Description</h3>
 					<hr>
@@ -62,7 +62,7 @@
 				</div>
 			</div>
 			<div class="col-md-3">
-				<div class="well">
+				<div class="well" style = "position: relative; left:30px; top: 750px; width: 220px">
 					<h3>Map Key & Control</h3>
 					<hr>
 					<div class="btn-group">
@@ -90,12 +90,10 @@
 	
 	<script type="text/javascript">
 	
-    var map = new Datamap({element: document.getElementById('mapContainer')});
-	
 	// Load data from CSV and convert to JSON
 	var dataset;
 	
-	d3.csv("http://localhost/en.atm.co2e.pc_Indicator_en_csv_v2.csv", function(data) {
+	d3.csv("data.csv", function(data) {
 	   dataset = data;
 	   console.log(dataset)
 	}, callbackFunc);
@@ -116,6 +114,27 @@
 			d3.select("#YearDropDown").append("li").html("<a href='#'>" + propertyName + "</a>");
 		}
 	}
+
+
+    var map = new Datamap({
+    	element: document.getElementById('mapContainer'), 
+    	data: dataset,
+    	geographyConfig: {
+	    	popupTemplate : function (geo, data) {
+	    	 	return  ['<div class="hoverinfo">' +  data["Country Name"],
+	             '</div>'].join('');
+	    	 }
+	    },
+    	setProjection: function (element) {
+    		var projection = d3.geo.equirectangular()
+    			//.scale(200)
+    			//.translate([1100/2, 750/2]);
+
+    		var path = d3.geo.path()
+    			.projection(projection);
+    		return {path: path, projection: projection};
+    	}
+    });
 	</script>
   </body>
 </html>
