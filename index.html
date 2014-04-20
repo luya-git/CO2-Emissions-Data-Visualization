@@ -46,24 +46,16 @@
     </div>
 
 	<!-- Bootstrap content container -->
-    <div class="container">
-		<div class="row">
-			<div class="col-md-9">
-				<!-- DataMaps Container -->
-				<div id="mapContainer" style="position: relative; width: 1100px; height: 750px;"></div>
-				<div class="well">
-					<h3>CO2 World Emissions Data Visualization: Project Description</h3>
-					<hr>
-					<h4>Data</h4>
-					<hr>
-					Our dataset comes from the World Bank. 
-					<br />URL: <a href="http://data.worldbank.org/indicator/EN.ATM.CO2E.PC">http://data.worldbank.org/indicator/EN.ATM.CO2E.PCmetric</a> 
-					<br />Units: METRIC TONS PER CAPITA 
+    <div class="container-fluid">
+    	<div class="row">
+			<div class="col-md-10">
+				<div class="row">
+				<div id="mapContainer"></div>
 				</div>
 			</div>
-			<div class="col-md-3">
-				<div class="well" style = "position: relative; left:30px; top: 750px; width: 220px">
-					<h3>Map Key & Control</h3>
+			<div class="col-md-2">
+				<div class="well">
+					<h4>Map Key & Control</h4>
 					<hr>
 					<div class="btn-group">
 					  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
@@ -77,6 +69,21 @@
 				</div>
 			</div>
 		</div>
+		<div class="row">
+			<div class="col-md-1"></div>
+			<div class="col-md-10">
+				<div class="well">
+					<h3>CO2 World Emissions Data Visualization: Project Description</h3>
+					<hr>
+					<h4>Data</h4>
+					<hr>
+					Our dataset comes from the World Bank. 
+					<br />URL: <a href="http://data.worldbank.org/indicator/EN.ATM.CO2E.PC">http://data.worldbank.org/indicator/EN.ATM.CO2E.PCmetric</a> 
+					<br />Units: METRIC TONS PER CAPITA 
+				</div>
+			</div>
+			<div class="col-md-1"></div>
+		</div>
     </div> <!-- /container -->
 
 
@@ -85,56 +92,63 @@
     <!-- Placed at the end of the document so the pages load faster -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
     <script src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+	<script src="http://d3js.org/d3.geo.projection.v0.min.js"></script>
 	<script src="http://d3js.org/topojson.v1.min.js"></script>
 	<script src="datamaps.world.min.js"></script>
 	
 	<script type="text/javascript">
 	
 	// Load data from CSV and convert to JSON
-	var dataset;
-	
+	var dataset = new Object();
+	var map;
 	d3.csv("data.csv", function(data) {
-	   dataset = data;
-	   console.log(dataset)
-	}, callbackFunc);
-	
-	// After CSV is loaded into the dataset object, this callback function is called
-	function callbackFunc()
-	{
-		// Set the year dropdown list
-		for(var propertyName in dataset) {
-		
-			// Only add years to the list (use regex to detect alpha chars)
-			if(propertyName.substring(0,1).match(/^[A-z]+$/))
-			{
-				continue;
-			}	
-			
-			// Add the year to the dropdown list
-			d3.select("#YearDropDown").append("li").html("<a href='#'>" + propertyName + "</a>");
-		}
-	}
+		data.forEach(function(row) {
+			dataset[row["Country Code"]] = row;
+
+			if(d3.select("#YearDropDown")[0][0].childElementCount==0){
+				// Set the year dropdown list
+				Object.keys(row).forEach(function(propertyName){
+					// Only add years to the list (use regex to detect alpha chars)
+					if(!propertyName.substring(0,1).match(/^[A-z]+$/))
+						// Add the year to the dropdown list
+						d3.select("#YearDropDown").append("li").html("<a href='#'>" + propertyName + "</a>");
+				});
+			}
+		});
+
+		map = new Datamap({
+	    	element: document.getElementById('mapContainer'), 
+	    	data: dataset,
+	    	geographyConfig: {
+		    	popupTemplate : function (geo, data) {
+		    		//console.log(data)
+		    		if(data != null)
+		    	 		return  ['<div class="hoverinfo">' +  data["Country Name"], '</div>'].join('');
+		    	 }
+		    },
+	    	setProjection: function (element) {
+	    		var projection = d3.geo.cylindricalStereographic()
+	    			.parallel(30)
+	    			.scale($(element).width()/6)
+	    			.translate([$(element).width()/2, $(element).height()/2]);
+
+	    		var path = d3.geo.path()
+	    			.projection(projection);
+	    		return {path: path, projection: projection};
+	    	}
+    	});
+	});
 
 
-    var map = new Datamap({
-    	element: document.getElementById('mapContainer'), 
-    	data: dataset,
-    	geographyConfig: {
-	    	popupTemplate : function (geo, data) {
-	    	 	return  ['<div class="hoverinfo">' +  data["Country Name"],
-	             '</div>'].join('');
-	    	 }
-	    },
-    	setProjection: function (element) {
-    		var projection = d3.geo.equirectangular()
-    			//.scale(200)
-    			//.translate([1100/2, 750/2]);
+	var colors = d3.scale.linear()
+	 	.domain([0, 20, 41])
+	 	.range(["green", "yellow", "grey"]);
 
-    		var path = d3.geo.path()
-    			.projection(projection);
-    		return {path: path, projection: projection};
-    	}
-    });
-	</script>
+	 window.setInterval(function() {
+	 	map.updateChoropleth({
+	 		USA: colors(3)
+	 	});
+	 }, 1000);
+    </script>
   </body>
 </html>
