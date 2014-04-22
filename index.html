@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="">
     <meta name="author" content="">
-
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
     <title></title>
 
 	<!-- grab d3 via cdn -->
@@ -58,14 +58,14 @@
 					<h4>Map Key & Control</h4>
 					<hr>
 					<div class="btn-group">
-					  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+					  <button id="curYear" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
 						Select Year <span class="caret"></span>
 					  </button>
 					  <ul id="YearDropDown" class="dropdown-menu scrollable-menu" role="menu">
 					  </ul>
 					</div>
 					<br /><br />
-					<button type="button" class="btn btn-default">Animate (1960-2010)</button>
+					<button type="button" class="btn btn-default">Animate (1960-2012)</button>
 				</div>
 			</div>
 		</div>
@@ -99,33 +99,73 @@
 	<script type="text/javascript">
 	
 	// Load data from CSV and convert to JSON
-	var dataset = new Object();
+	var dataset = new Object(); //Array of Country codes, each code is array of (fillKey -> key)
+	var colorset = new Object(); //Array of years, each year is array of (country codes -> #color code)
+	var colors = d3.scale.linear()
+	 	.domain([0, 20, 41])
+	 	.range(["green", "yellow", "grey"]);
 	var map;
+	var yr = 1960;
+	var count = 0;
 	d3.csv("data.csv", function(data) {
+	//console.log(data);
+		
 		data.forEach(function(row) {
-			dataset[row["Country Code"]] = row;
-
+		  if(row["Country;Code"].length == 3 && row["Country;Code"]!= " RB"){ //The country Venezuela, RB is messing up results
+			dataset[row["Country;Code"]] = new Object();
+			
+			
+			for(var prop in row) {
+				if(count == 0 && parseInt(prop) > 1959 && parseInt(prop) < 2013 && prop.length == 4){
+					colorset[prop] = new Object();
+				}
+				if (parseInt(prop) > 1959 && parseInt(prop) < 2013 && prop.length == 4){
+					if(parseFloat(row[prop]) > 0){
+						//dataset[row["Country;Code"]][prop] = row[prop];
+						colorset[prop][row["Country;Code"]] = colors(parseFloat(row[prop]));
+					}else{
+						//dataset[row["Country;Code"]][prop] = -1;
+						colorset[prop][row["Country;Code"]] = "#DDDDDD";
+					}
+				}
+			}
+			dataset[row["Country;Code"]]["fillKey"] = row["Country;Code"];
 			if(d3.select("#YearDropDown")[0][0].childElementCount==0){
 				// Set the year dropdown list
 				Object.keys(row).forEach(function(propertyName){
 					// Only add years to the list (use regex to detect alpha chars)
-					if(!propertyName.substring(0,1).match(/^[A-z]+$/))
+					if(!propertyName.substring(0,1).match(/^[A-z]+$/) && propertyName.length == 4)
 						// Add the year to the dropdown list
-						d3.select("#YearDropDown").append("li").html("<a href='#'>" + propertyName + "</a>");
+						d3.select("#YearDropDown").append("li").html("<a class='year' href='#"+propertyName+"'>" + propertyName + "</a>");
 				});
 			}
+			count++;
+		  }
 		});
-
+		
+		yr = parseInt(window.location.hash.substring(1));
+		if (yr > 1959 && yr < 2013)
+			map_year(yr);
+		else{
+			yr = 1960;
+			map_year(yr);
+		}
+		
+		
 		map = new Datamap({
 	    	element: document.getElementById('mapContainer'), 
 	    	data: dataset,
-	    	geographyConfig: {
+	    	fills: colorset[yr],
+			//colorset[yr],
+			
+			geographyConfig: {
 		    	popupTemplate : function (geo, data) {
 		    		//console.log(data)
 		    		if(data != null)
 		    	 		return  ['<div class="hoverinfo">' +  data["Country Name"], '</div>'].join('');
 		    	 }
 		    },
+			
 	    	setProjection: function (element) {
 	    		var projection = d3.geo.cylindricalStereographic()
 	    			.parallel(30)
@@ -137,18 +177,25 @@
 	    		return {path: path, projection: projection};
 	    	}
     	});
+		
+		$("a.year").click(function(){
+			yr = parseInt($(this).html());
+			if(yr > 0) map_year(yr);
+		});
+		
+		function map_year(year){
+			$("#curYear").html(year + " <span class='caret'></span>");
+			window.setTimeout(function() {
+	 	
+				map.updateChoropleth(colorset[year]);
+				
+			}, 500);
+
+		}
+		
 	});
 
-
-	var colors = d3.scale.linear()
-	 	.domain([0, 20, 41])
-	 	.range(["green", "yellow", "grey"]);
-
-	 window.setInterval(function() {
-	 	map.updateChoropleth({
-	 		USA: colors(3)
-	 	});
-	 }, 1000);
+	 
     </script>
   </body>
 </html>
