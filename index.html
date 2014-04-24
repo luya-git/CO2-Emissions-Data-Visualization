@@ -130,6 +130,8 @@
 				}
 			}
 			dataset[row["Country;Code"]]["fillKey"] = row["Country;Code"];
+			dataset[row["Country;Code"]]["Country;Name"] = row["Country;Name"];
+			//console.log(row);
 			if(d3.select("#YearDropDown")[0][0].childElementCount==0){
 				// Set the year dropdown list
 				Object.keys(row).forEach(function(propertyName){
@@ -162,7 +164,7 @@
 		    	popupTemplate : function (geo, data) {
 		    		//console.log(data)
 		    		if(data != null)
-		    	 		return  ['<div class="hoverinfo">' +  data["Country Name"], '</div>'].join('');
+		    	 		return  ['<div class="hoverinfo">' +  data["Country;Name"], '</div>'].join('');
 		    	 }
 		    },
 			
