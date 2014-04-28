@@ -14,7 +14,7 @@
 	
 	<!-- custom css for project -->
 	<link href="project.css" rel="stylesheet">
-	
+
     <!-- Bootstrap core CSS -->
     <link href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet">
 
@@ -47,6 +47,10 @@
 
 	<!-- Bootstrap content container -->
     <div class="container-fluid">
+    	<div class = "row">
+    		<div class = "col-md-6"><div id = "color-bar"></div></div>
+    		<div class = "col-md-4"><br><div id = "year-indicator"></div></div>
+    	</div>
     	<div class="row">
 			<div class="col-md-10">
 				<div class="row">
@@ -103,9 +107,62 @@
 	var dataset = new Object(); //Array of Country codes, each code is array of (fillKey -> key)
 	var colorset = new Object(); //Array of years, each year is array of (country codes -> #color code)
 
-	//var colors = d3.scale.linear()
-	
 
+	// color scale
+	var colors = d3.scale.threshold()
+    .domain([2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22])
+    .range(["#006837", "#31a354", "#78c679", "#addd8e", "#d9f0a3", "#f6f7b9", 
+    		"#fed976", "feb24c", "fd8d3c", "fc4e2a", "e31a1c", "b10026"]);
+
+
+	// Color legend
+	var x = d3.scale.linear()
+	    .domain([0, 42])
+	    .range([0, 450]);
+
+    formatNumber = d3.format("d");
+
+	var xAxis = d3.svg.axis()
+	    .scale(x)
+	    .orient("bottom")
+	    .tickSize(0)
+	    .tickPadding(13)
+	    .tickValues(colors.domain())
+	    .tickFormat(function(d) { console.log(d); return formatNumber(d); });
+
+	    //.tickFormat(function(d) { console.log(d); return parseInt(d, 10); });
+	    //.tickFormat(function(d) {return d === .5 ? formatPercent(d) : formatNumber(100 * d)});
+
+
+	width = 600;
+	height = 50;
+	var svg = d3.select("#color-bar").append("svg")
+	    .attr("width", width)
+	    .attr("height", height);
+
+	var g = svg.append("g")
+	    .attr("class", "key")
+	    .attr("transform", "translate(" + (width - 500) / 2 + "," + height / 2 + ")");
+
+	g.selectAll("rect")
+	    .data(colors.range().map(function(color) {
+	      var d = colors.invertExtent(color);
+	      if (d[0] == null) d[0] = x.domain()[0];
+	      if (d[1] == null) d[1] = x.domain()[1];
+	      return d;
+	    }))
+	  .enter().append("rect")
+	    .attr("height", 10)
+	    .attr("x", function(d) { return x(d[0]); })
+	    .attr("width", function(d) { return x(d[1]) - x(d[0]); })
+	    .style("fill", function(d) { return colors(d[0]); })
+
+	g.call(xAxis).append("text")
+	    .attr("class", "caption")
+	    .attr("y", -6)
+	    .text("CO2 Emissions (Metric Tons per Capita)");
+
+	
 	// var colors = d3.scale.linear()
 	// 	.range(["#005824", "#238b45", "#41ae76", "#66c2a4", "#99d8c9", "#ccece6", "#e5f5f9", "#f7fcfd"]);
 
@@ -113,11 +170,13 @@
 
 	//color_range = colorbrewer.Greens[9].concat(colorbrewer.Oranges[9], colorbrewer.RdGy[9]);
 
-	var colors = d3.scale.linear()
+    //.range(["#f6f7b9", "#d9f0a3", "#addd8e", "#78c679", "#31a354", "#006837"]);
+
+	//var colors = d3.scale.linear()
 		//.domain([])
-		.domain([0, 2, 4, 6, 8, 10, 12, 14])
+	//	.domain([0, 2, 4, 6, 8, 10, 12, 14])
 	 	//.range(color_range);
-	 	.range(["#005824", "#238b45", "#41ae76", "#66c2a4", "#99d8c9", "#ccece6", "#e5f5f9", "#f7fcfd"]);
+		//.range(["#005824", "#238b45", "#41ae76", "#66c2a4", "#99d8c9", "#ccece6", "#e5f5f9", "#f7fcfd"]);
 	 	//.range(colorbrewer.Greens[8]);
 
 	var map;
@@ -195,8 +254,6 @@
 	    		return {path: path, projection: projection};
 	    	}
     	});
-		
-
 
 		$("a.year").click(function(){
 			yr = parseInt($(this).html());
@@ -212,13 +269,16 @@
 		
 	});
 
-		 year = 2000;
+		 year = 1961;
+		 var container = document.getElementById("year-indicator");
 		 window.setInterval(function() {
+		 	var container = document.getElementById("year-indicator");
 		 	//console.log(map);
 		 	//console.log(colorset[year]);
 			map.updateChoropleth(colorset[year]);
 			year++;
-		}, 1000);
+			container.innerHTML = "Current Year: " + year;
+		}, 1500);
 
 	 
     </script>
