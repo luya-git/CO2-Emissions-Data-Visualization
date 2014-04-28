@@ -9,19 +9,14 @@ body {
   overflow: hidden;
 }
 
-svg {
+
+.axis text {
   font: 10px sans-serif;
 }
 
-.caption {
-  font-weight: bold;
-}
-
-.key path {
-  display: none;
-}
-
-.key line {
+.axis line,
+.axis path {
+  fill: none;
   stroke: #000;
   shape-rendering: crispEdges;
 }

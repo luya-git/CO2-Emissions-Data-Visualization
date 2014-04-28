@@ -47,18 +47,22 @@
 
 	<!-- Bootstrap content container -->
     <div class="container-fluid">
+
     	<div class = "row">
     		<div class = "col-md-6"><div id = "color-bar"></div></div>
     		<div class = "col-md-4"><br><div id = "year-indicator"></div></div>
     	</div>
     	<div class="row">
-			<div class="col-md-10">
+    		<div class = "col-md-1">
+    			<div id = "chart" style = "positive: relative; padding-top: 370px"></div>
+    		</div>
+			<div class="col-md-9">
 				<div class="row">
-					<div id="mapContainer"  style="position: relative; width: 1400px; height: 800px;"></div>
+					<div id="mapContainer"  style="position: relative; left: -100px; width: 1300px; height: 750px;"></div>
 				</div>
 			</div>
 			<div class="col-md-2">
-				<div class="well">
+				<div class="well" style = "position: relative; left: 30px;">
 					<h4>Map Key & Control</h4>
 					<hr>
 					<div class="btn-group">
@@ -71,7 +75,7 @@
 					<br /><br />
 					<button type="button" class="btn btn-default">Animate (1960-2012)</button>
 				</div>
-				<div id="countryDataDiv" class="well">
+				<div id="countryDataDiv" class="well" style = "position: relative; left: 30px;">
 				</div>
 			</div>
 		</div>
@@ -130,11 +134,7 @@
 	    .tickSize(0)
 	    .tickPadding(13)
 	    .tickValues(colors.domain())
-	    .tickFormat(function(d) { console.log(d); return formatNumber(d); });
-
-	    //.tickFormat(function(d) { console.log(d); return parseInt(d, 10); });
-	    //.tickFormat(function(d) {return d === .5 ? formatPercent(d) : formatNumber(100 * d)});
-
+	    .tickFormat(function(d) { return formatNumber(d); });
 
 	width = 600;
 	height = 50;
@@ -146,7 +146,7 @@
 	    .attr("class", "key")
 	    .attr("transform", "translate(" + (width - 500) / 2 + "," + height / 2 + ")");
 
-	g.selectAll("rect")
+ 	g.selectAll("rect")
 	    .data(colors.range().map(function(color) {
 	      var d = colors.invertExtent(color);
 	      if (d[0] == null) d[0] = x.domain()[0];
@@ -164,11 +164,45 @@
 	    .attr("y", -6)
 	    .text("CO2 Emissions (Metric Tons per Capita)");
 
+
+	// line charts configuration
+
+	var margin = {top: 20, right: 20, bottom: 30, left: 50},
+    l_width = 400 - margin.left - margin.right,
+    l_height = 200 - margin.top - margin.bottom;
+
+
+	var parse = d3.time.format("%Y").parse;
+
+	var l_x = d3.time.scale()
+  	  .range([0, l_width]);
+
+	var l_y = d3.scale.linear()
+  	  .range([l_height, 0]);
+
+	var xAxis = d3.svg.axis()
+	   .scale(l_x)
+	   .orient("bottom");
+
+	var yAxis = d3.svg.axis()
+        .scale(l_y)
+	    .orient("left");
+
+	var line = d3.svg.line()
+    	.x(function(d, i) {  return l_x(parse(i + 1960 + "")); })
+    	.y(function(d) { return l_y(d); });
+
+	var svg = d3.select("#chart").append("svg")
+	    .attr("width", l_width + margin.left + margin.right)
+	    .attr("height", l_height + margin.top + margin.bottom)
+	  .append("g")
+	    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    // map and data parsing
 	var map;
 	var yr = 1960;
 	var count = 0;
 	d3.csv("data.csv", function(data) {
-	//console.log(data);
 		
 		data.forEach(function(row) {
 			dataset[row["Country Code"]] = new Object();
@@ -190,6 +224,10 @@
 			}
 			dataset[row["Country Code"]]["fillKey"] = row["Country Code"];
 			dataset[row["Country Code"]]["Country Name"] = row["Country Name"];
+			for (i = 1960; i <= 2010; i++) {
+				dataset[row["Country Code"]][i + ""] = row[i + ""];
+			}
+
 			//console.log(row);
 			if(d3.select("#YearDropDown")[0][0].childElementCount==0){
 				// Set the year dropdown list
@@ -197,7 +235,7 @@
 					// Only add years to the list (use regex to detect alpha chars)
 					if(!propertyName.substring(0,1).match(/^[A-z]+$/) && propertyName.length == 4)
 						// Add the year to the dropdown list
-						d3.select("#YearDropDown").append("li").html("<a class='year' href='#"+propertyName+"'>" + propertyName + "</a>");
+						d3.select("#YearDropDown").append("li").html("<a class='year' href='#" + propertyName+"'>" + propertyName + "</a>");
 				});
 			}
 			count++;
@@ -210,8 +248,11 @@
 			yr = 1960;
 			map_year(yr);
 		}
-		
-		
+	
+
+	 	// current year
+		year = 1960;
+
 		map = new Datamap({
 	    	element: document.getElementById('mapContainer'), 
 	    	data: dataset,
@@ -219,7 +260,7 @@
 			geographyConfig: {
 		    	popupTemplate : function (geo, data) {
 					if(data != null)
-						return  ['<div class="hoverinfo">' +  data["Country Name"], '</div>'].join('');
+						return  ['<div class="hoverinfo">' + data["Country Name"], '</div>'].join('');
 		    	 }
 		    },
 	    	setProjection: function (element) {
@@ -240,15 +281,71 @@
 					for(var i = 0; i < data.length; i++)
 					{
 						if(data[i]["Country Code"] == geography.id)
-							emissions = data[i][String(yr)];
+							emissions = data[i][String(year)];
 					}
 					
-					$("#countryDataDiv").empty().append("<h2>" + geography.properties.name + " - " + yr + "</h2>"
+					$("#countryDataDiv").empty().append("<h2>" + geography.properties.name + "-" + year + "</h2>"
 						+ "<p><strong>" + "CO2 emitted (metric tons per capita): </strong></p>" + (emissions ? emissions: "No Data Available")
 					); 
             });
+			
+			datamap.svg.selectAll('.datamaps-subunit').on('click', function(geography) {
+
+					// clear the canvas 
+					svg.selectAll("path").remove();
+					svg.selectAll(".axis").remove();
+
+					var cur_country;
+					for(var i = 0; i < data.length; i++)
+					{
+							if(data[i]["Country Code"] == geography.id)
+							cur_country = i;
+					}
+
+					// create line charts
+					var datum = [];
+					for (i = 1960; i <= 2010; i++) {
+						if (data[cur_country][i+""] == "") datum.push(0);
+						else datum.push(data[cur_country][i+""]);
+						console.log(datum);
+					}
+
+					  l_x.domain(d3.extent(datum, function(d, i) { return parse(i + 1960 + ""); }));
+					  l_y.domain(d3.extent(datum, function(d) { return d; }));
+
+					 svg.append("g")
+					      .attr("class", "x axis")
+					      .attr("transform", "translate(0," + (height + 90) + ")")
+					      .call(xAxis)
+					      .selectAll("text")
+						    .attr("y", 0)
+						    .attr("x", 9)
+						    .attr("dy", ".35em")
+						    .attr("transform", "rotate(80)")
+						    .style("text-anchor", "start");
+   
+					  svg.append("g")
+					      .attr("class", "y axis")
+					      .call(yAxis)
+					    .append("text")
+					      .attr("transform", "rotate(-90)")
+					      .attr("y", 6)
+					      .attr("dy", ".71em")
+					      .style("text-anchor", "end")
+					      .text("CO2 Emissions");
+
+					  svg.append("path")
+					      .datum(datum)
+					      .attr("class", "line")
+					      .attr("d", line)
+					      .style("stroke-width", 2)
+					      .style("stroke", "steelblue")
+					      .style("fill", "none");
+
+			});
 			}
     	});
+
 
 		$("a.year").click(function(){
 			yr = parseInt($(this).html());
@@ -264,18 +361,21 @@
 		
 	});
 
-		 year = 1961;
+		// Year indicator
 		 var container = document.getElementById("year-indicator");
 		 window.setInterval(function() {
 		 	var container = document.getElementById("year-indicator");
 		 	//console.log(map);
 		 	//console.log(colorset[year]);
 			map.updateChoropleth(colorset[year]);
-			year++;
-			if (year < 2011) container.innerHTML = "Current Year: " + year;
+			if (year < 2010) {
+				year++;
+				container.innerHTML = "Current Year: " + year;
+			}
 		}, 1500);
 
-	 
+
+
     </script>
   </body>
 </html>
