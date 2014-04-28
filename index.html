@@ -11,7 +11,7 @@
 
 	<!-- grab d3 via cdn -->
 	<script src="http://d3js.org/d3.v3.min.js"></script>
-	
+
 	<!-- custom css for project -->
 	<link href="project.css" rel="stylesheet">
 
@@ -73,7 +73,7 @@
 					  </ul>
 					</div>
 					<br /><br />
-					<button type="button" class="btn btn-default">Animate (1960-2012)</button>
+					<button id="animate_years" type="button" class="btn btn-default" onclick="animate_go()">Animate (1960-2012)</button>
 				</div>
 				<div id="countryDataDiv" class="well" style = "position: relative; left: 30px;">
 				</div>
@@ -108,7 +108,7 @@
 	<script src="colorbrewer.js"></script>
 
 	<script type="text/javascript">
-	
+
 	// Load data from CSV and convert to JSON
 	var dataset = new Object(); //Array of Country codes, each code is array of (fillKey -> key)
 	var colorset = new Object(); //Array of years, each year is array of (country codes -> #color code)
@@ -203,11 +203,11 @@
 	var yr = 1960;
 	var count = 0;
 	d3.csv("data.csv", function(data) {
-		
+
 		data.forEach(function(row) {
 			dataset[row["Country Code"]] = new Object();
-			
-			
+
+
 			for(var prop in row) {
 				if(count == 0 && parseInt(prop) > 1959 && parseInt(prop) < 2011 && prop.length == 4){
 					colorset[prop] = new Object();
@@ -240,7 +240,7 @@
 			}
 			count++;
 		});
-		
+
 		yr = parseInt(window.location.hash.substring(1));
 		if (yr > 1959 && yr < 2011)
 			map_year(yr);
@@ -248,7 +248,7 @@
 			yr = 1960;
 			map_year(yr);
 		}
-	
+
 
 	 	// current year
 		year = 1960;
@@ -271,24 +271,24 @@
 
 	    		var path = d3.geo.path()
 	    			.projection(projection);
-					
+
 	    		return {path: path, projection: projection};
 	    	},
 			done: function(datamap) {
 				datamap.svg.selectAll('.datamaps-subunit').on('mouseover', function(geography) {
 					var emissions;
-					
+
 					for(var i = 0; i < data.length; i++)
 					{
 						if(data[i]["Country Code"] == geography.id)
 							emissions = data[i][String(year)];
 					}
-					
+
 					$("#countryDataDiv").empty().append("<h2>" + geography.properties.name + "-" + year + "</h2>"
 						+ "<p><strong>" + "CO2 emitted (metric tons per capita): </strong></p>" + (emissions ? emissions: "No Data Available")
 					); 
             });
-			
+
 			datamap.svg.selectAll('.datamaps-subunit').on('click', function(geography) {
 
 					// clear the canvas 
@@ -351,29 +351,40 @@
 			yr = parseInt($(this).html());
 			if(yr > 0) map_year(yr);
 		});
-		
-		function map_year(year){
-			$("#curYear").html(year + " <span class='caret'></span>");
+
+		function map_year(year_param){
+			$("#curYear").html(year_param + " <span class='caret'></span>");
 			window.setTimeout(function() {
-	 			map.updateChoropleth(colorset[year]);			
+	 			map.updateChoropleth(colorset[year_param]);
+				year = year_param;
+				document.getElementById("year-indicator").innerHTML = "Current Year: " + year_param
 			}, 500);
 		}
-		
+
 	});
 
 		// Year indicator
 		 var container = document.getElementById("year-indicator");
-		 window.setInterval(function() {
-		 	var container = document.getElementById("year-indicator");
-		 	//console.log(map);
-		 	//console.log(colorset[year]);
-			map.updateChoropleth(colorset[year]);
-			if (year < 2010) {
-				year++;
-				container.innerHTML = "Current Year: " + year;
+		 var started = false;
+		 var stopID;
+		 function animate_go(){
+			if (!started){
+				 stopID = window.setInterval(function() {
+					var container = document.getElementById("year-indicator");
+					//console.log(map);
+					//console.log(colorset[year]);
+					map.updateChoropleth(colorset[year]);
+					if (year < 2010) {
+						year++;
+						container.innerHTML = "Current Year: " + year;
+					}else year = 1960;
+				}, 1500);
+				started = true;
+			}else{
+				clearInterval(stopID);
+				started = false;
 			}
-		}, 1500);
-
+		}
 
 
     </script>
