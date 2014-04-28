@@ -50,7 +50,7 @@
     	<div class="row">
 			<div class="col-md-10">
 				<div class="row">
-				<div id="mapContainer"></div>
+					<div id="mapContainer"  style="position: relative; width: 1400px; height: 800px;"></div>
 				</div>
 			</div>
 			<div class="col-md-2">
@@ -66,6 +66,8 @@
 					</div>
 					<br /><br />
 					<button type="button" class="btn btn-default">Animate (1960-2012)</button>
+				</div>
+				<div id="countryDataDiv" class="well">
 				</div>
 			</div>
 		</div>
@@ -127,7 +129,6 @@
 	//console.log(data);
 		
 		data.forEach(function(row) {
-		  if(row["Country Code"].length == 3 && row["Country Code"]!= " RB"){ //The country Venezuela, RB is messing up results
 			dataset[row["Country Code"]] = new Object();
 			
 			
@@ -158,7 +159,6 @@
 				});
 			}
 			count++;
-		  }
 		});
 		
 		yr = parseInt(window.location.hash.substring(1));
@@ -174,16 +174,12 @@
 	    	element: document.getElementById('mapContainer'), 
 	    	data: dataset,
 	    	fills: colorset[yr],
-			//colorset[yr],
-			
 			geographyConfig: {
 		    	popupTemplate : function (geo, data) {
-		    		//console.log(data)
-		    		if(data != null)
-		    	 		return  ['<div class="hoverinfo">' +  data["Country Name"], '</div>'].join('');
+					if(data != null)
+						return  ['<div class="hoverinfo">' +  data["Country Name"], '</div>'].join('');
 		    	 }
 		    },
-			
 	    	setProjection: function (element) {
 	    		var projection = d3.geo.cylindricalStereographic()
 	    			.parallel(30)
@@ -192,12 +188,26 @@
 
 	    		var path = d3.geo.path()
 	    			.projection(projection);
+					
 	    		return {path: path, projection: projection};
-	    	}
+	    	},
+			done: function(datamap) {
+				datamap.svg.selectAll('.datamaps-subunit').on('mouseover', function(geography) {
+					var emissions;
+					
+					for(var i = 0; i < data.length; i++)
+					{
+						if(data[i]["Country Code"] == geography.id)
+							emissions = data[i][String(yr)];
+					}
+					
+					$("#countryDataDiv").empty().append("<h2>" + geography.properties.name + " - " + yr + "</h2>"
+						+ "<p><strong>" + "CO2 emitted (metric tons per capita): </strong></p>" + (emissions ? emissions: "No Data Available")
+					); 
+            });
+			}
     	});
 		
-
-
 		$("a.year").click(function(){
 			yr = parseInt($(this).html());
 			if(yr > 0) map_year(yr);
