@@ -50,7 +50,7 @@
     	<div class="row">
 			<div class="col-md-10">
 				<div class="row">
-					<div id="mapContainer"  style="position: relative; width: 1400px; height: 800px;"></div>
+				<div id="mapContainer"></div>
 				</div>
 			</div>
 			<div class="col-md-2">
@@ -66,8 +66,6 @@
 					</div>
 					<br /><br />
 					<button type="button" class="btn btn-default">Animate (1960-2012)</button>
-				</div>
-				<div id="countryDataDiv" class="well">
 				</div>
 			</div>
 		</div>
@@ -97,15 +95,31 @@
 	<script src="http://d3js.org/d3.geo.projection.v0.min.js"></script>
 	<script src="http://d3js.org/topojson.v1.min.js"></script>
 	<script src="datamaps.world.min.js"></script>
-	
+	<script src="colorbrewer.js"></script>
+
 	<script type="text/javascript">
 	
 	// Load data from CSV and convert to JSON
 	var dataset = new Object(); //Array of Country codes, each code is array of (fillKey -> key)
 	var colorset = new Object(); //Array of years, each year is array of (country codes -> #color code)
+
+	//var colors = d3.scale.linear()
+	
+
+	// var colors = d3.scale.linear()
+	// 	.range(["#005824", "#238b45", "#41ae76", "#66c2a4", "#99d8c9", "#ccece6", "#e5f5f9", "#f7fcfd"]);
+
+	//color_range = ["#000000", "#27302C", "#2E4A3D", "2D694D", "2C855B", "219E64", "1AB06A", "27E68D", "2BFF9C"]
+
+	//color_range = colorbrewer.Greens[9].concat(colorbrewer.Oranges[9], colorbrewer.RdGy[9]);
+
 	var colors = d3.scale.linear()
-	 	.domain([0, 20, 41])
-	 	.range(["green", "yellow", "grey"]);
+		//.domain([])
+		.domain([0, 2, 4, 6, 8, 10, 12, 14])
+	 	//.range(color_range);
+	 	.range(["#005824", "#238b45", "#41ae76", "#66c2a4", "#99d8c9", "#ccece6", "#e5f5f9", "#f7fcfd"]);
+	 	//.range(colorbrewer.Greens[8]);
+
 	var map;
 	var yr = 1960;
 	var count = 0;
@@ -113,19 +127,20 @@
 	//console.log(data);
 		
 		data.forEach(function(row) {
+		  if(row["Country Code"].length == 3 && row["Country Code"]!= " RB"){ //The country Venezuela, RB is messing up results
 			dataset[row["Country Code"]] = new Object();
 			
 			
 			for(var prop in row) {
-				if(count == 0 && parseInt(prop) > 1959 && parseInt(prop) < 2013 && prop.length == 4){
+				if(count == 0 && parseInt(prop) > 1959 && parseInt(prop) < 2011 && prop.length == 4){
 					colorset[prop] = new Object();
 				}
-				if (parseInt(prop) > 1959 && parseInt(prop) < 2013 && prop.length == 4){
+				if (parseInt(prop) > 1959 && parseInt(prop) < 2011 && prop.length == 4){
 					if(parseFloat(row[prop]) > 0){
-						//dataset[row["Country Code"]][prop] = row[prop];
+						//dataset[row["Country;Code"]][prop] = row[prop];
 						colorset[prop][row["Country Code"]] = colors(parseFloat(row[prop]));
 					}else{
-						//dataset[row["Country Code"]][prop] = -1;
+						//dataset[row["Country;Code"]][prop] = -1;
 						colorset[prop][row["Country Code"]] = "#DDDDDD";
 					}
 				}
@@ -143,26 +158,32 @@
 				});
 			}
 			count++;
+		  }
 		});
 		
 		yr = parseInt(window.location.hash.substring(1));
-		if (yr > 1959 && yr < 2013)
+		if (yr > 1959 && yr < 2011)
 			map_year(yr);
 		else{
 			yr = 1960;
 			map_year(yr);
 		}
 		
+		
 		map = new Datamap({
 	    	element: document.getElementById('mapContainer'), 
 	    	data: dataset,
 	    	fills: colorset[yr],
+			//colorset[yr],
+			
 			geographyConfig: {
 		    	popupTemplate : function (geo, data) {
-					if(data != null)
-						return  ['<div class="hoverinfo">' +  data["Country Name"], '</div>'].join('');
+		    		//console.log(data)
+		    		if(data != null)
+		    	 		return  ['<div class="hoverinfo">' +  data["Country Name"], '</div>'].join('');
 		    	 }
 		    },
+			
 	    	setProjection: function (element) {
 	    		var projection = d3.geo.cylindricalStereographic()
 	    			.parallel(30)
@@ -171,26 +192,12 @@
 
 	    		var path = d3.geo.path()
 	    			.projection(projection);
-					
 	    		return {path: path, projection: projection};
-	    	},
-			done: function(datamap) {
-				datamap.svg.selectAll('.datamaps-subunit').on('mouseover', function(geography) {
-					var emissions;
-					
-					for(var i = 0; i < data.length; i++)
-					{
-						if(data[i]["Country Code"] == geography.id)
-							emissions = data[i][String(yr)];
-					}
-					
-					$("#countryDataDiv").empty().append("<h2>" + geography.properties.name + " - " + yr + "</h2>"
-						+ "<p><strong>" + "CO2 emitted (metric tons per capita): </strong></p>" + (emissions ? emissions: "No Data Available")
-					); 
-            });
-			}
+	    	}
     	});
 		
+
+
 		$("a.year").click(function(){
 			yr = parseInt($(this).html());
 			if(yr > 0) map_year(yr);
@@ -199,10 +206,21 @@
 		function map_year(year){
 			$("#curYear").html(year + " <span class='caret'></span>");
 			window.setTimeout(function() {
-				map.updateChoropleth(colorset[year]);
+	 			map.updateChoropleth(colorset[year]);			
 			}, 500);
 		}
+		
 	});
+
+		 year = 2000;
+		 window.setInterval(function() {
+		 	//console.log(map);
+		 	//console.log(colorset[year]);
+			map.updateChoropleth(colorset[year]);
+			year++;
+		}, 1000);
+
+	 
     </script>
   </body>
 </html>
