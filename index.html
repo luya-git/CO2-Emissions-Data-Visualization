@@ -31,7 +31,7 @@
   <body>
 
     <!-- Static navbar -->
-    <div class="navbar navbar-default navbar-static-top" role="navigation">
+    <div class="navbar navbar-inverse navbar-static-top" role="navigation">
       <div class="container">
         <div class="navbar-header">
           <a class="navbar-brand" href="#">CO2 World Emissions Data Visualization</a>
@@ -39,7 +39,7 @@
         <div class="navbar-collapse collapse">
           <ul class="nav navbar-nav">
             <li class="active"><a href="#">Visualization</a></li>
-            <li><a href="#about">About</a></li>
+            <li><a href="about.html">About</a></li>
           </ul>
         </div><!--/.nav-collapse -->
       </div>
@@ -62,9 +62,9 @@
 				</div>
 			</div>
 			<div class="col-md-2">
-				<div class="well" style = "position: relative; left: 30px;">
-					<h4>Map Key & Control</h4>
-					<hr>
+				<div class="panel panel-primary">
+					<div class="panel-heading"><h4>Map Control</h4></div>
+					<div class="panel-body">
 					<div class="btn-group">
 					  <button id="curYear" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
 						Select Year <span class="caret"></span>
@@ -73,26 +73,16 @@
 					  </ul>
 					</div>
 					<br /><br />
-					<button id="animate_years" type="button" class="btn btn-default" onclick="animate_go()">Animate (1960-2012)</button>
+					<button id="animate_years" type="button" class="btn btn-default">Toggle Animation</button>
+					<br /><br />
+					<i>Hint: Click a country to display a line graph of its historical CO2 emissions data.</i>
+					</div>
 				</div>
-				<div id="countryDataDiv" class="well" style = "position: relative; left: 30px;">
-				</div>
-			</div>
-		</div>
-		<div class="row">
-			<div class="col-md-1"></div>
-			<div class="col-md-10">
-				<div class="well">
-					<h3>CO2 World Emissions Data Visualization: Project Description</h3>
-					<hr>
-					<h4>Data</h4>
-					<hr>
-					Our dataset comes from the World Bank. 
-					<br />URL: <a href="http://data.worldbank.org/indicator/EN.ATM.CO2E.PC">http://data.worldbank.org/indicator/EN.ATM.CO2E.PCmetric</a> 
-					<br />Units: METRIC TONS PER CAPITA 
+				<div id="countryDataDiv" class="panel panel-default">
+					<div id="countryDataDivHeading" class="panel-heading"></div>
+					<div id="countryDataDivBody" class="panel-body"></div>
 				</div>
 			</div>
-			<div class="col-md-1"></div>
 		</div>
     </div> <!-- /container -->
 
@@ -118,7 +108,7 @@
 	var colors = d3.scale.threshold()
     .domain([2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22])
     .range(["#006837", "#31a354", "#78c679", "#addd8e", "#d9f0a3", "#f6f7b9", 
-    		"#fed976", "feb24c", "fd8d3c", "fc4e2a", "e31a1c", "b10026"]);
+    		"#fed976", "#feb24c", "#fd8d3c", "#fc4e2a", "#e31a1c", "#b10026"]);
 
 
 	// Color legend
@@ -235,7 +225,8 @@
 					// Only add years to the list (use regex to detect alpha chars)
 					if(!propertyName.substring(0,1).match(/^[A-z]+$/) && propertyName.length == 4)
 						// Add the year to the dropdown list
-						d3.select("#YearDropDown").append("li").html("<a class='year' href='#" + propertyName+"'>" + propertyName + "</a>");
+						if(propertyName < 2011)
+							d3.select("#YearDropDown").append("li").html("<a class='year' href='#" + propertyName+"'>" + propertyName + "</a>");
 				});
 			}
 			count++;
@@ -281,12 +272,11 @@
 					for(var i = 0; i < data.length; i++)
 					{
 						if(data[i]["Country Code"] == geography.id)
-							emissions = data[i][String(year)];
+							emissions = data[i][String(yr)];
 					}
 
-					$("#countryDataDiv").empty().append("<h2>" + geography.properties.name + "-" + year + "</h2>"
-						+ "<p><strong>" + "CO2 emitted (metric tons per capita): </strong></p>" + (emissions ? emissions: "No Data Available")
-					); 
+					$("#countryDataDivHeading").empty().append("<h3>" + geography.properties.name + " - " + yr + "</h3>");
+					$("#countryDataDivBody").empty().append("<p>" + "CO2 emitted (metric tons per capita):</p><strong>" + (emissions ? emissions: "No Data Available"));
             });
 
 			datamap.svg.selectAll('.datamaps-subunit').on('click', function(geography) {
@@ -307,7 +297,7 @@
 					for (i = 1960; i <= 2010; i++) {
 						if (data[cur_country][i+""] == "") datum.push(0);
 						else datum.push(data[cur_country][i+""]);
-						console.log(datum);
+						//console.log(datum);
 					}
 
 					  l_x.domain(d3.extent(datum, function(d, i) { return parse(i + 1960 + ""); }));
@@ -357,17 +347,17 @@
 			window.setTimeout(function() {
 	 			map.updateChoropleth(colorset[year_param]);
 				year = year_param;
-				document.getElementById("year-indicator").innerHTML = "Current Year: " + year_param
+				document.getElementById("year-indicator").innerHTML = "<strong>Current Year: " + year_param +"</strong>"
 			}, 500);
 		}
 
 	});
 
+		var container = document.getElementById("year-indicator");
+		var started = false;
+		var stopID;
 		// Year indicator
-		 var container = document.getElementById("year-indicator");
-		 var started = false;
-		 var stopID;
-		 function animate_go(){
+		$("#animate_years").click(function(){
 			if (!started){
 				 stopID = window.setInterval(function() {
 					var container = document.getElementById("year-indicator");
@@ -375,8 +365,8 @@
 					//console.log(colorset[year]);
 					map.updateChoropleth(colorset[year]);
 					if (year < 2010) {
-						year++;
-						container.innerHTML = "Current Year: " + year;
+						year++; yr=year;
+						container.innerHTML = "<strong>Current Year: " + year_param +"</strong>"
 					}else year = 1960;
 				}, 1500);
 				started = true;
@@ -384,9 +374,7 @@
 				clearInterval(stopID);
 				started = false;
 			}
-		}
-
-
+		});
     </script>
   </body>
 </html>
