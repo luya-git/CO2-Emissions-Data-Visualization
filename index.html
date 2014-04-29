@@ -301,7 +301,7 @@
 					}
 
 					  l_x.domain(d3.extent(datum, function(d, i) { return parse(i + 1960 + ""); }));
-					  l_y.domain(d3.extent(datum, function(d) { return d; }));
+					  l_y.domain(d3.extent(datum, function(d) { return +d; }));
 
 					 svg.append("g")
 					      .attr("class", "x axis")
